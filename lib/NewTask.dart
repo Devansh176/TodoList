@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-
+import 'package:provider/provider.dart';
+import 'package:todo_list/provider/dBProvider.dart';
 import 'Task.dart';
 
 class NewTask extends StatefulWidget {
@@ -13,11 +14,13 @@ class NewTask extends StatefulWidget {
 
 class _NewTaskState extends State<NewTask> {
   final TextEditingController taskController = TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
 
   late DateTime selectDate;
   late String date;
   late TimeOfDay selectTime;
   late String time;
+  IconData? selectedCategory;
 
   @override
   void initState() {
@@ -69,11 +72,32 @@ class _NewTaskState extends State<NewTask> {
 
   void _saveTask() {
     final taskTitle = taskController.text;
-    if (taskTitle.isNotEmpty) {
-      final newTask = Task(taskTitle, selectDate, selectTime);
-      widget.onAddTask(newTask);
-      Navigator.pop(context);
+    final description = descriptionController.text;
+
+    if (taskTitle.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Task title is required")),
+      );
+      return;
     }
+
+    if (selectedCategory == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select a category")),
+      );
+      return;
+    }
+
+    if (taskTitle.isNotEmpty && selectedCategory != null) {
+      context.read<DBProvider>().addNote(
+        taskTitle,
+        selectedCategory as int,
+        date,
+        time,
+        description,
+      );
+    }
+    Navigator.pop(context);
   }
 
   @override
@@ -114,7 +138,7 @@ class _NewTaskState extends State<NewTask> {
                   ),
                 ),
                 SizedBox(height: padding * 0.7),
-                TextField(
+                TextFormField(
                   controller: taskController,
                   cursorColor: Colors.amber,
                   decoration: const InputDecoration(
@@ -129,6 +153,12 @@ class _NewTaskState extends State<NewTask> {
                   style: const TextStyle(
                     fontFamily: 'PlaywriteGBS',
                   ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Title is required';
+                    }
+                    return null;
+                  },
                 ),
                 SizedBox(height: padding * 2.5),
                 Text(
@@ -140,70 +170,16 @@ class _NewTaskState extends State<NewTask> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: padding * 0.4),
+                SizedBox(height: padding * 0.5),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.indigo,
-                        shape: BoxShape.circle,
-                      ),
-                      child: IconButton(
-                        icon: Icon(Icons.school, size: fontSize * 1.0, color: Colors.white), // Set icon color to contrast with background
-                        onPressed: () {},
-                      ),
-                    ),
-                    Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.cyan,
-                        shape: BoxShape.circle,
-                      ),
-                      child: IconButton(
-                        icon: Icon(Icons.account_circle_rounded, size: fontSize * 1.0, color: Colors.white), // Set icon color to contrast with background
-                        onPressed: () {},
-                      ),
-                    ),
-                    Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.orangeAccent,
-                        shape: BoxShape.circle,
-                      ),
-                      child: IconButton(
-                        icon: Icon(Icons.add_chart_rounded, size: fontSize * 1.0, color: Colors.white), // Set icon color to contrast with background
-                        onPressed: () {},
-                      ),
-                    ),
-                    Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.pink,
-                        shape: BoxShape.circle,
-                      ),
-                      child: IconButton(
-                        icon: Icon(Icons.health_and_safety, size: fontSize * 1.0, color: Colors.white), // Set icon color to contrast with background
-                        onPressed: () {},
-                      ),
-                    ),
-                    Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.brown,
-                        shape: BoxShape.circle,
-                      ),
-                      child: IconButton(
-                        icon: Icon(Icons.home, size: fontSize * 1.0, color: Colors.white), // Set icon color to contrast with background
-                        onPressed: () {},
-                      ),
-                    ),
-                    Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.teal,
-                        shape: BoxShape.circle,
-                      ),
-                      child: IconButton(
-                        icon: Icon(Icons.date_range, size: fontSize * 1.0, color: Colors.white), // Set icon color to contrast with background
-                        onPressed: () {},
-                      ),
-                    ),
+                    _buildCategoryIcon(Icons.school, Colors.indigo,),
+                    _buildCategoryIcon(Icons.account_circle_outlined, Colors.cyan,),
+                    _buildCategoryIcon(Icons.add_chart_rounded, Colors.orangeAccent,),
+                    _buildCategoryIcon(Icons.health_and_safety, Colors.pink,),
+                    _buildCategoryIcon(Icons.home, Colors.brown,),
+                    _buildCategoryIcon(Icons.date_range, Colors.teal,),
                   ],
                 ),
                 SizedBox(height: padding * 2.5),
@@ -356,7 +332,6 @@ class _NewTaskState extends State<NewTask> {
                   ),
                 ),
                 SizedBox(height: padding * 0.1,),
-
                 Padding(
                   padding: EdgeInsets.only(left: padding * 5.0),
                   child: ElevatedButton(
@@ -384,4 +359,48 @@ class _NewTaskState extends State<NewTask> {
       ),
     );
   }
+
+  final Map<IconData, int> categoryMap = {
+    Icons.school: 1,
+    Icons.account_circle_outlined: 2,
+    Icons.add_chart_rounded: 3,
+    Icons.health_and_safety: 4,
+    Icons.home: 5,
+    Icons.date_range: 6,
+  };
+
+  Widget _buildCategoryIcon(IconData icon, Color color) {
+    final screenSize = MediaQuery.of(context).size;
+    final double width = screenSize.width;
+    final double fontSize = width * 0.06;
+    final double containerSize = width * 0.11;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedCategory = categoryMap[icon] as IconData?;
+        });
+      },
+      child: Container(
+        height: containerSize,
+        width: containerSize,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: selectedCategory == categoryMap[icon] ? Colors.black : Colors.transparent,
+            width: 3.0,
+          ),
+        ),
+        child: Center(
+          child: Icon(
+            icon,
+            size: fontSize,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
 }

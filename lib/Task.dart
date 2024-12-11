@@ -6,5 +6,5 @@ class Task {
   TimeOfDay time;
   bool isDone;
 
-  Task(this.title, this.date, this.time, {this.isDone = false});
+  Task(this.title, this.date, this.time, IconData? selectedCategory,  {this.isDone = false});
 }

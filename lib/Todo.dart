@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:todo_list/NewTask.dart';
+import 'package:todo_list/data/local/dbConnection.dart';
 
 import 'Task.dart';
 
@@ -11,6 +12,9 @@ class Todo extends StatefulWidget {
 }
 
 class _TodoState extends State<Todo> {
+  List<Map<String, dynamic>> allNotes = [];
+  DBConnection? dbRef;
+
   late DateTime selectedDate;
   late String date;
 
@@ -19,18 +23,23 @@ class _TodoState extends State<Todo> {
     super.initState();
     selectedDate = DateTime.now();
     date = formatDate(selectedDate);
+    dbRef = DBConnection.getInstance;
+    getNotes();
+  }
+
+  void getNotes() async {
+    allNotes = await dbRef!.getAllNotes();
+    setState(() {
+
+    });
   }
 
   String formatDate(DateTime date){
     return '${date.day} / ${date.month} / ${date.year}';
   }
 
-  final List<TodoItem> _incompleteTodoItems = [
-
-  ];
-
+  final List<TodoItem> _incompleteTodoItems = [];
   final List<TodoItem> _completedTodoItems = [];
-
   final List<Task> _tasks = [];
 
   void _addNewTask(Task task) {
@@ -148,10 +157,10 @@ class _TodoState extends State<Todo> {
                 child: Text(
                   date,
                   style: TextStyle(
-                    fontFamily: 'PlaywriteGBS',
-                    fontSize: fontSize * 1.2,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white
+                      fontFamily: 'PlaywriteGBS',
+                      fontSize: fontSize * 1.2,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white
                   ),
                 ),
               ),

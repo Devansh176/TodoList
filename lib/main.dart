@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:todo_list/NewTask.dart';
+import 'package:provider/provider.dart';
 import 'package:todo_list/Todo.dart';
+import 'package:todo_list/data/local/dbConnection.dart';
+import 'package:todo_list/provider/dBProvider.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,9 +14,16 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Todo(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (context) => DBProvider(dbConnection: DBConnection.getInstance),
+        ),
+      ],
+      child: const MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Todo(),
+      ),
     );
   }
 }
